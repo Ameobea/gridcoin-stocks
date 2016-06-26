@@ -1,0 +1,26 @@
+{
+  "name": "gridcoin-stocks",
+  "version": "1.0.0",
+  "description": "An IRC-based stock market simulator that takes user deposits in gridcoin and allows users to play the stock market.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ameobea/gridcoin-stocks.git"
+  },
+  "dependencies": {
+    "irc": "0.5.0",
+    "mysql": "2.10.2"
+  },
+  "keywords": [
+    "gridcoin"
+  ],
+  "author": "Casey Primozic <me@ameo.link>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Ameobea/gridcoin-stocks/issues"
+  },
+  "homepage": "https://github.com/Ameobea/gridcoin-stocks#readme"
+}
