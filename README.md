@@ -25,12 +25,12 @@ To close an open position, use this command:
 
 `!stock sell [ticker symbol] [amount in gridcoins]`
 
-Alternatively, you can use the keyword `all` in place of the amount in gridcoins to close the entire position.
+Alternatively, you can use the keyword `all` in place of the amount in gridcoins to close the entire position.  Positions are closed in a First In First Out (FIFO) fashion, with older positions being closed before newer ones.
 
 ## Viewing Your Portfolio
 To view your open positions and current profit/loss figures, use the `!stock positions` command.  This will output the result either to the channel or via PM, depending on the way the command was received.  You will see a list of your first 5 open positions, their profit and loss, as well as the profit and loss of your currently open positions and entire account since its creation.
 
 # Problems + Questions
-If the bot does anything you think it shouldn't or breaks in any way, please let me know either on IRC (Username Ameo), by leaving an issue here on Github, or by sending an email to me@ameo.link.  I keep full logs of everything the bot sees, sends, credits, and receives, and there are channel-wide logs for the $gridcoin-games channel.  Any cases of missing or stolen funds will be dealt with and refunded as appropriate.  
+If the bot does anything you think it shouldn't or breaks in any way, please let me know either on IRC (Username Ameo), by leaving an issue here on Github, or by sending an email to me@ameo.link.  I keep full logs of everything the bot sees, sends, credits, and receives, and there are channel-wide logs for the #gridcoin-games channel.  Any cases of missing or stolen funds will be dealt with and refunded as appropriate.
 
-That being said, please don't deposit more gridcoins than you can afford to lose; I provide no insurance for market movements or gridcoins lost due to a mistake outside of my control.
+That being said, please don't deposit more gridcoins than you can afford to lose; I provide no insurance for unfavorable market movements or gridcoins lost due to a mistake outside of my control.
