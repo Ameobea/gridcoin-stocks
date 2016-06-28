@@ -8,7 +8,11 @@ Provides functions to communicate with the MySQL database backend
 var dbQuery = exports;
 
 var mysql = require("mysql");
-var conf  = require("conf");
+var conf  = require("./conf");
+var Promise = require("bluebird");
+Promise.onPossiblyUnhandledRejection(function(error){
+  throw error;
+});
 
 dbQuery.connection = null;
 
@@ -18,7 +22,7 @@ dbQuery.init = ()=>{
       host     : conf.sqlIp,
       user     : conf.sqlUsername,
       password : conf.sqlPassword,
-      database : conf.sqlUserDb
+      database : conf.sqlDb
     });
 
     dbQuery.connection.connect(err=>{
@@ -51,7 +55,7 @@ dbQuery.getPositions = (nick, symbol)=>{
       f(res);
     };
 
-    if(!symbols){
+    if(!symbol){
       let query = "SELECT * FROM `positions` WHERE `nick` = ?";
       dbQuery.connection.query(query, [nick], cb);
     }else{

@@ -6,6 +6,10 @@ var ircio = exports;
 var irc = require("irc");
 var conf = require("./conf");
 var commands = require("./commands");
+var Promise = require("bluebird");
+Promise.onPossiblyUnhandledRejection(function(error){
+  throw error;
+});
 
 ircio.client = null;
 
@@ -22,20 +26,32 @@ ircio.sendPM = (nick, message)=>{
 
 // Same rules as ircio.sendPM but sends it on the public channel.
 ircio.sendMessage = (message)=>{
-  ircio.send(conf.ircChannel, message);
+  ircio.client.say(conf.ircChannel, message);
 };
 
 ircio.init = ()=>{
   ircio.connect().then(()=>{
+    console.log("Connected to IRC server.")
     ircio.client.say("NickServ", `IDENTIFY ${conf.nickservPass}`);
+    console.log("Sending authentication request to Nickserv.")
     ircio.client.addListener("pm", commands.processPM);
-    ircio.client.addListener(`message#${conf.ircChannel}`, commands.processMessage);
+
+    var joinListener = (channel, nick, message)=>{
+      console.log("Joined " + channel);
+      ircio.client.addListener(`message#`, commands.processMessage);
+      ircio.client.removeListener("join", joinListener); // no longer need to listen for joins
+    }
+    ircio.client.addListener("join", joinListener);
+    setTimeout(()=>{
+      ircio.client.join(conf.ircChannel);
+      console.log("Joining " + conf.ircChannel);
+    }, 1834);
   });
 };
 
 ircio.connect = ()=>{
   return new Promise((f,r)=>{
-    if(ifcio.client == null){
+    if(ircio.client === null){
       ircio.client = new irc.Client(conf.ircServer, conf.ircUsername, {
         channels: [conf.ircChannel],
         floodProtection: true,
