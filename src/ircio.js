@@ -16,20 +16,35 @@ ircio.client = null;
 // If message is a string, sends it.  If array, sends all messages sequentially.
 ircio.sendPM = (nick, message)=>{
   if(typeof(message) != "string"){
+    console.log(`Sending messages to ${nick}:`)
     message.forEach(mes=>{
+      console.log(` ${message}`);
       ircio.client.say(nick, mes);
     });
   }else{
+    console.log(`Sending message to ${nick}:`);
+    console.log(message);
     ircio.client.say(nick, message);
   }
 };
 
 // Same rules as ircio.sendPM but sends it on the public channel.
 ircio.sendMessage = (message)=>{
-  ircio.client.say(conf.ircChannel, message);
+  if(typeof(message) == "string"){
+    console.log(`Sending message on channel ${conf.ircChannel}:`);
+    console.log(message);
+    ircio.client.say(conf.ircChannel, message);
+  }else{
+    console.log(`Sending messages on channel ${conf.ircChannel}:`);
+    message.forEach(mes=>{
+      console.log(` ${mes}`);
+      ircio.client.say(conf.ircChannel, mes);
+    })
+  }
 };
 
 ircio.init = ()=>{
+  console.log(`Connecting to ${conf.ircServer}`);
   ircio.connect().then(()=>{
     console.log("Connected to IRC server.")
     ircio.client.say("NickServ", `IDENTIFY ${conf.nickservPass}`);

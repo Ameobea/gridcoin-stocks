@@ -9,6 +9,7 @@ var dbQuery = exports;
 
 var mysql = require("mysql");
 var conf  = require("./conf");
+var ircio = require("./ircio");
 var Promise = require("bluebird");
 Promise.onPossiblyUnhandledRejection(function(error){
   throw error;
@@ -42,7 +43,14 @@ dbQuery.init = ()=>{
 dbQuery.getUser = nick=>{
   return new Promise((f,r)=>{
     dbQuery.connection.query("SELECT * FROM `users` WHERE `nick` = ?;", [nick], (err, res)=>{
-      f(res);
+      if(res && res.length > 0){
+        f(res[0]);
+      }else{
+        dbQuery.connection.query("INSERT INTO `users` (`nick`, `balance`) VALUES(?, ?);",
+            [nick, 0], (err, res)=>{});
+        console.log(res);
+        f([{nick: nick, balance: 0}]);
+      }
     });
   });
 };
@@ -62,5 +70,28 @@ dbQuery.getPositions = (nick, symbol)=>{
       let query = "SELECT * FROM `positions` WHERE `nick` = ? AND `symbol` = ?";
       dbQuery.connection.query(query, [nick, symbol], cb);
     }
+  });
+};
+
+dbQuery.adjustBalance = (userId, nick, amount, oldBalance)=>{
+  return new Promise((f,r)=>{
+    var query = "UPDATE `users` SET `balance` = ? WHERE `id` = ?;";
+    dbQuery.connection.query(query, [oldBalance + amount, userId], (err, res)=>{
+      if(res.affectedRows == 1){
+        console.log(`User with Id ${userId} withdrew ${-amount} gridcoin.`);
+        ircio.sendMessage(`!tip ${nick} ${-amount}`);
+        res = [
+          `Withdrawn ${-amount} gridcoins.`,
+          `Your current balance: ${oldBalance + amount}`
+        ];
+        f(res);
+      }else{ // For some reason the database didn't change.
+        res = [
+          "An error has occured!  This has been logged.",
+          "If you believe you've lose gridcoin, please contact me using !stock contact."
+        ];
+        f(res);
+      }
+    });
   });
 };

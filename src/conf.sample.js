@@ -11,4 +11,6 @@ config.ircUserNickserv = true;
 config.ircServer    = "chat.freenode.net";
 config.ircUsername  = "Ameobot";
 config.nickservPass = "hunter2";
-config.ircChannel  = "#gridcoin-games";
+config.ircChannel   = "#gridcoin-games";
+
+config.tipBotNick   = "GRCtip2";
