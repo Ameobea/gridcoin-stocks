@@ -40,16 +40,19 @@ dbQuery.init = ()=>{
 /* The following functions return promises the fulfill the result data from the database. */
 
 // Returns all stored data about a user from the database.
+// If user doesn't exist, it is created.
 dbQuery.getUser = nick=>{
   return new Promise((f,r)=>{
     dbQuery.connection.query("SELECT * FROM `users` WHERE `nick` = ?;", [nick], (err, res)=>{
+      console.log(err, res)
       if(res && res.length > 0){
+        console.log("resss")
         f(res[0]);
       }else{
         dbQuery.connection.query("INSERT INTO `users` (`nick`, `balance`) VALUES(?, ?);",
-            [nick, 0], (err, res)=>{});
-        console.log(res);
-        f([{nick: nick, balance: 0}]);
+            [nick, 0], (err, res)=>{
+          dbQuery.getUser(nick).then(f);
+        });
       }
     });
   });
@@ -79,11 +82,14 @@ dbQuery.adjustBalance = (userId, nick, amount, oldBalance)=>{
     dbQuery.connection.query(query, [oldBalance + amount, userId], (err, res)=>{
       if(res.affectedRows == 1){
         console.log(`User with Id ${userId} withdrew ${-amount} gridcoin.`);
-        ircio.sendMessage(`!tip ${nick} ${-amount}`);
+        var tranType = (amount > 0) ? "Deposit" : "Withdrawl"
         res = [
-          `Withdrawn ${-amount} gridcoins.`,
+          `${tranType} ${-amount} gridcoins.`,
           `Your current balance: ${oldBalance + amount}`
         ];
+        if(tranType == "Withdrawl"){
+          ircio.sendMessage(`!tip ${nick} ${-amount}`);
+        }
         f(res);
       }else{ // For some reason the database didn't change.
         res = [

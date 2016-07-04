@@ -52,13 +52,22 @@ commands.doCommand = (nick, command, args)=>{
 commands.processMessage = (sender, channel, text, message)=>{
   console.log("Message received in " + conf.ircChannel + ":");
   console.log(`${sender}: ${text}`);
-  if(text.trim().indexOf("!stock") === 0){ // if message is a command for the bot
-    var split = text.split("!stock ")[1].split(" ");
-    commands.doCommand(sender, split[0].toLowerCase(), split.slice(1)).then(response=>{
+  var lowerUsername = conf.ircUsername.toLowerCase();
+  if(text.trim().indexOf("!stock ") === 0){ // if message is a command for the bot
+    let splitStr = text.split("!stock ")[1].split(" ");
+    commands.doCommand(sender, splitStr[0].toLowerCase(), splitStr.slice(1)).then(response=>{
       if(response){
         ircio.sendMessage(response);
       }
     });
+  // Tip received
+  }else if(sender == conf.tipBotNick && text.toLowerCase().indexOf(`tipped ${lowerUsername}`) != -1){
+    text = text.toLowerCase();
+    // Ameo tipped Ameobot 0.1 GRC! Type "/msg GRCtip2 help" for info.
+    let splitStr = text.split(lowerUsername + " ");
+    var amount = splitStr[1].split(" grc")[0];
+    var nick = splitStr[0].split(" tipped")[0];
+    commands.deposit(nick, parseFloat(amount)).then(ircio.sendMessage);
   }
 };
 
@@ -78,13 +87,15 @@ commands.processPM = (nick, message)=>{
 commands.balance = nick=>{
   return new Promise((f,r)=>{
     dbq.getUser(nick).then(user=>{
+      if(!user.balance){
+        user.balance = 0;
+      }
       f(`Current balance: ${user.balance}`);
     });
   });
 };
 
 commands.withdraw = (nick, amount)=>{
-  commands.locks.push(nick);
   return new Promise((f,r)=>{
     // Unlocks user and then fulfills with given response
     var u_f = res=>{
@@ -93,15 +104,42 @@ commands.withdraw = (nick, amount)=>{
     };
 
     dbq.getUser(nick).then(user=>{
-      var parsed = parseInt(amount);
-      if(isNaN(parsed)){
+      var parsed = parseFloat(amount);
+      if(commands.locks.indexOf(nick) != -1){
+        u_f("Ongoing transaction for this username!  This has been logged; please report it!");
+      }else if(isNaN(parsed)){
         u_f("Incomprehensible withdraw amount.");
       }else if(parsed <= 0 || user.balance <= 0){
         u_f("If only it were that easy.");
       }else if(parsed <= user.balance){
+        commands.locks.push(nick);
         dbq.adjustBalance(user.id, user.nick, -parsed, user.balance).then(u_f);
       }else{
+        commands.locks.push(nick);
         dbq.adjustBalance(user.id, user.nick, -user.balance, user.balance).then(u_f);
+      }
+    });
+  });
+};
+
+commands.deposit = (nick, amount)=>{
+  console.log("deposit", nick, amount)
+  return new Promise((f,r)=>{
+    var u_f = res=>{
+      commands.unlock(nick);
+      f(res);
+    };
+    dbq.getUser(nick).then(user=>{
+      console.log(user);
+      if(commands.locks.indexOf(nick) != -1){
+        u_f("Ongoing transaction for this username!  This has been logged.");
+      }else if(isNaN(amount)){
+        u_f("Couldn't get deposit amount!  This has been logged; please report it!");
+      }else if(amount <= 0){
+        u_f("GRCTip gave an invalid deposit amount; this has been recorded!");
+      }else{
+        commands.locks.push(nick);
+        dbq.adjustBalance(user.id, user.nick, amount, user.balance).then(u_f);
       }
     });
   });

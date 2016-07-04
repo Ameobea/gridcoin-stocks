@@ -16,7 +16,7 @@ ircio.client = null;
 // If message is a string, sends it.  If array, sends all messages sequentially.
 ircio.sendPM = (nick, message)=>{
   if(typeof(message) != "string"){
-    console.log(`Sending messages to ${nick}:`)
+    console.log(`Sending messages to ${nick}:`);
     message.forEach(mes=>{
       console.log(` ${message}`);
       ircio.client.say(nick, mes);
@@ -39,28 +39,36 @@ ircio.sendMessage = (message)=>{
     message.forEach(mes=>{
       console.log(` ${mes}`);
       ircio.client.say(conf.ircChannel, mes);
-    })
+    });
   }
 };
 
 ircio.init = ()=>{
   console.log(`Connecting to ${conf.ircServer}`);
   ircio.connect().then(()=>{
-    console.log("Connected to IRC server.")
+    if(conf.debug){
+      ircio.client.addListener("raw", console.log);
+    }
+    console.log("Connected to IRC server.");
     ircio.client.say("NickServ", `IDENTIFY ${conf.nickservPass}`);
-    console.log("Sending authentication request to Nickserv.")
+    console.log("Sending authentication request to Nickserv.");
     ircio.client.addListener("pm", commands.processPM);
 
     var joinListener = (channel, nick, message)=>{
       console.log("Joined " + channel);
       ircio.client.addListener(`message#`, commands.processMessage);
       ircio.client.removeListener("join", joinListener); // no longer need to listen for joins
-    }
-    ircio.client.addListener("join", joinListener);
-    setTimeout(()=>{
-      ircio.client.join(conf.ircChannel);
-      console.log("Joining " + conf.ircChannel);
-    }, 1834);
+    };
+    var authListener = (nick, to, text, message)=>{
+      if(nick == "NickServ" && text.indexOf("You are now identified for") != -1){
+        ircio.client.removeListener("notice", authListener);
+        ircio.client.addListener("join", joinListener);
+        ircio.client.join(conf.ircChannel);
+        console.log("Joining " + conf.ircChannel);
+      }
+    };
+
+    ircio.client.addListener("notice", authListener);
   });
 };
 
@@ -68,7 +76,6 @@ ircio.connect = ()=>{
   return new Promise((f,r)=>{
     if(ircio.client === null){
       ircio.client = new irc.Client(conf.ircServer, conf.ircUsername, {
-        channels: [conf.ircChannel],
         floodProtection: true,
         floodProtectionDelay: 232
       });
