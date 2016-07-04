@@ -5,6 +5,7 @@ var commands = exports;
 var ircio = require("./ircio");
 var dbq   = require("./dbQuery");
 var conf  = require("./conf");
+var stocks= require("./stocks");
 var Promise = require("bluebird");
 Promise.onPossiblyUnhandledRejection(function(error){
   throw error;
@@ -42,6 +43,10 @@ commands.doCommand = (nick, command, args)=>{
       case "help":
         f("See https://github.com/Ameobea/gridcoin-stocks#readme for usage and commands.");
         break;
+      case "buy":
+        commands.openPosition(nick, args).then(f);
+      case "sell":
+        commands.closePosition(nick, args).then(f);
       default:
         f("Command not found.  Try !stock help (just the word `help` via PM).");
     }
@@ -90,7 +95,7 @@ commands.balance = nick=>{
       if(!user.balance){
         user.balance = 0;
       }
-      f(`Current balance: ${user.balance}`);
+      f(`Current balance: ${user.balance} GRC`);
     });
   });
 };
@@ -123,7 +128,6 @@ commands.withdraw = (nick, amount)=>{
 };
 
 commands.deposit = (nick, amount)=>{
-  console.log("deposit", nick, amount)
   return new Promise((f,r)=>{
     var u_f = res=>{
       commands.unlock(nick);
@@ -145,13 +149,30 @@ commands.deposit = (nick, amount)=>{
   });
 };
 
-commands.openPosition = (nick, symbol, amount, direction)=>{
+commands.openPosition = (nick, args)=>{
   return new Promise((f,r)=>{
-    //TODO
+    stocks.getAsset(symbol).then(data=>{
+      dbq.getUser(nick).then(user=>{
+        if(user.balance >= amount){
+          var lastDate = new Date(data.lt_dts);
+          var diff = Date.now() - lastDate;
+          // Only trade if activity in the last 30 seconds
+          if(diff < 30000){
+            dbq.openPosition(user, data.e + ":" + data.t, parseFloat(data.l)).then(f);
+          }else{
+            f("No trades in " + symbol + " in the last 30 seconds; not opening position.");
+          }
+        }else{
+          f("Not enough funds to open a position of that size!");
+        }
+      });
+    }, ()=>{ // finance API returned error
+      f("No asset found with symbol " + symbol);
+    });
   });
 };
 
-commands.closePosition = (nick, symbol, amount)=>{
+commands.closePosition = (nick, args)=>{
   return new Promise((f,r)=>{
     //TODO
   });

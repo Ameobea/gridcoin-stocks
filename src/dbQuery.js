@@ -44,9 +44,7 @@ dbQuery.init = ()=>{
 dbQuery.getUser = nick=>{
   return new Promise((f,r)=>{
     dbQuery.connection.query("SELECT * FROM `users` WHERE `nick` = ?;", [nick], (err, res)=>{
-      console.log(err, res)
       if(res && res.length > 0){
-        console.log("resss")
         f(res[0]);
       }else{
         dbQuery.connection.query("INSERT INTO `users` (`nick`, `balance`) VALUES(?, ?);",
@@ -82,12 +80,12 @@ dbQuery.adjustBalance = (userId, nick, amount, oldBalance)=>{
     dbQuery.connection.query(query, [oldBalance + amount, userId], (err, res)=>{
       if(res.affectedRows == 1){
         console.log(`User with Id ${userId} withdrew ${-amount} gridcoin.`);
-        var tranType = (amount > 0) ? "Deposit" : "Withdrawl"
+        var tranType = (amount > 0) ? "Deposited" : "Withdrawn";
         res = [
-          `${tranType} ${-amount} gridcoins.`,
+          `${tranType} ${Math.abs(amount)} gridcoins.`,
           `Your current balance: ${oldBalance + amount}`
         ];
-        if(tranType == "Withdrawl"){
+        if(tranType == "Withdrawn"){
           ircio.sendMessage(`!tip ${nick} ${-amount}`);
         }
         f(res);
@@ -98,6 +96,15 @@ dbQuery.adjustBalance = (userId, nick, amount, oldBalance)=>{
         ];
         f(res);
       }
+    });
+  });
+};
+
+dbQuery.openPosition = (user, symbol, size, price)=>{
+  return new Promise((f,r)=>{
+    var query = "INSERT INTO `positions` (`user`, `symbol`, `size`, `openprice`), VALUES(?, ?, ?, ?);";
+    dbQuery.connection.query(query, [user.id, symbol, size, price], (err, res)=>{
+      f();
     });
   });
 };
