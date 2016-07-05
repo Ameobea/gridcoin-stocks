@@ -11,7 +11,7 @@ stocks.getAsset = symbol=>{
     https.get(stocks.apiURL + symbol, res=>{
       res.on("data", data=>{
         if(data.indexOf("httpserver.cc") == -1){
-          f(JSON.parse(data.replace("//", "")));
+          f(JSON.parse(data.toString().replace("//", ""))[0]);
         }else{
           r();
         }

@@ -100,11 +100,10 @@ dbQuery.adjustBalance = (userId, nick, amount, oldBalance)=>{
   });
 };
 
-dbQuery.openPosition = (user, symbol, size, price)=>{
+dbQuery.openPosition = (user, symbol, size, price, direction)=>{
   return new Promise((f,r)=>{
-    var query = "INSERT INTO `positions` (`user`, `symbol`, `size`, `openprice`), VALUES(?, ?, ?, ?);";
-    dbQuery.connection.query(query, [user.id, symbol, size, price], (err, res)=>{
-      f();
-    });
+    var long = direction == "long";
+    var query = "INSERT INTO `positions` (`user`, `symbol`, `size`, `openprice`, `long`), VALUES(?, ?, ?, ?, ?);";
+    dbQuery.connection.query(query, [user.id, symbol, size, price, long + 0], (err, res)=>{f();});
   });
 };

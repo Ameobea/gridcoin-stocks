@@ -45,8 +45,10 @@ commands.doCommand = (nick, command, args)=>{
         break;
       case "buy":
         commands.openPosition(nick, args).then(f);
+        break;
       case "sell":
         commands.closePosition(nick, args).then(f);
+        break;
       default:
         f("Command not found.  Try !stock help (just the word `help` via PM).");
     }
@@ -134,7 +136,6 @@ commands.deposit = (nick, amount)=>{
       f(res);
     };
     dbq.getUser(nick).then(user=>{
-      console.log(user);
       if(commands.locks.indexOf(nick) != -1){
         u_f("Ongoing transaction for this username!  This has been logged.");
       }else if(isNaN(amount)){
@@ -151,17 +152,27 @@ commands.deposit = (nick, amount)=>{
 
 commands.openPosition = (nick, args)=>{
   return new Promise((f,r)=>{
+    var symbol = args[0];
+    var amount = parseFloat(args[1]);
     stocks.getAsset(symbol).then(data=>{
       dbq.getUser(nick).then(user=>{
         if(user.balance >= amount){
           var lastDate = new Date(data.lt_dts);
           var diff = Date.now() - lastDate;
           // Only trade if activity in the last 30 seconds
-          if(diff < 30000){
-            dbq.openPosition(user, data.e + ":" + data.t, parseFloat(data.l)).then(f);
+          if(diff < 403855386){
+            var direction = "long";
+            if(args.length > 2 && args[2].toLowerCase() == "short"){
+              direction = "short";
+            }
+            dbq.openPosition(user, data.t, amount, parseFloat(data.l), direction).then(()=>{
+              f(`Position of size ${amount} GRC in ${data.t} at price ${data.l} opened!`);
+            });
           }else{
             f("No trades in " + symbol + " in the last 30 seconds; not opening position.");
           }
+        }else if(isNaN(amount) || amount == undefined){
+          f("You must supply a size position size!  See !stock help (just help via PM) for more info!");
         }else{
           f("Not enough funds to open a position of that size!");
         }
